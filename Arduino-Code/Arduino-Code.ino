@@ -52,8 +52,8 @@ void setup() {
 }
 
 void loop() {
-   //Auswahl des Spielmodus mit dem gleichzeiten drücken von Tasten für 50ms. Die Wahl wird bestätigt mit dem leuchten der korrespondierenden LED.
-   //Blau & Rot = Normales Spiel
+   // Auswahl des Spielmodus mit dem gleichzeiten drücken von Tasten für 50ms. Die Wahl wird bestätigt mit dem Leuchten der korrespondierenden LED.
+   // Blau & Rot = Normales Spiel
    if (digitalRead(blueButton) == HIGH && digitalRead(redButton) == HIGH) {
       delay(50); // Entprellung
       if (digitalRead(blueButton) == HIGH && digitalRead(redButton) == HIGH) {
@@ -65,7 +65,7 @@ void loop() {
          delay(2000); // 2 Sekunde warten, um die Auswahl zu sehen
       }
    }
-   //Gelb & Grün = Schwerer Modus
+   // Gelb & Grün = Schwerer Modus
    if (digitalRead(yellowButton) == HIGH && digitalRead(greenButton) == HIGH) {
       delay(50); // Entprellung
       if (digitalRead(yellowButton) == HIGH && digitalRead(greenButton) == HIGH) {
@@ -77,7 +77,7 @@ void loop() {
          delay(2000); // 2 Sekunde warten, um die Auswahl zu sehen
       }
    }
-   //Blau & Gelb = N-Back Modus (2 Back)
+   // Blau & Gelb = N-Back Modus (2 Back)
    if (digitalRead(blueButton) == HIGH && digitalRead(yellowButton) == HIGH) {
       delay(50); // Entprellung
       if (digitalRead(blueButton) == HIGH && digitalRead(yellowButton) == HIGH) {
@@ -89,7 +89,7 @@ void loop() {
          delay(2000); // 2 Sekunde warten, um die Auswahl zu sehen
       }
    }
-   //Rot & Grün = N-Back Modus (3 Back)
+   // Rot & Grün = N-Back Modus (3 Back)
    if (digitalRead(redButton) == HIGH && digitalRead(greenButton) == HIGH) {
       delay(50); // Entprellung
       if (digitalRead(redButton) == HIGH && digitalRead(greenButton) == HIGH) {
