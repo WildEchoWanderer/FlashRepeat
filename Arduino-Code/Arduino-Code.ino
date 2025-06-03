@@ -1,7 +1,18 @@
 /*
-Dieses skript steuert ein Simon game.
+Dieses skript steuert ein Simon game für einen Arduino.
+Es ermöglicht die Auswahl von verschiedenen Spielmodi durch das gleichzeitige Drücken von Tasten.
+Die Tasten sind wie folgt zugeordnet:
+- Blau & Rot: Normales Spiel
+- Gelb & Grün: Schwerer Modus
+- Blau & Gelb: N-Back Modus (2 Back)
+- Rot & Grün: N-Back Modus (3 Back)
+
+
 */
 
+#include <Arduino.h>
+
+// Pin-Definitionen für Tasten und LEDs
 #define blueButton 13
 #define redButton 12
 #define yellowButton 11
@@ -11,15 +22,62 @@ Dieses skript steuert ein Simon game.
 #define yellowLED 5
 #define greenLED 4
 
-//Variablen erstellen
-int gameModeSelect = 0;  // wählt den spielmodus
+// Spiel-Variablen 
+#define MAX_LEVEL 100
+int spielSequenz[MAX_LEVEL];
+int aktuellesLevel = 0;
+int buttonPins[] = {blueButton, redButton, yellowButton, greenButton};
+int ledPins[] = {blueLED, redLED, yellowLED, greenLED};
+int gameModeSelect = 0;  // wählt den Spielmodus
 
+// Hilfsfunktionen für das Spiel
+
+// Zeigt die aktuelle Sequenz an, indem die LEDs nacheinander leuchten
+void zeigeSequenz() {
+  for(int i = 0; i < aktuellesLevel; i++) {
+    digitalWrite(ledPins[spielSequenz[i]], HIGH);
+    delay(500);
+    digitalWrite(ledPins[spielSequenz[i]], LOW);
+    delay(250);
+  }
+}
+
+// Wartet auf die Eingabe des Spielers und gibt den Index der gedrückten Taste zurück
+int warteAufEingabe() {
+  while(true) {
+    for(int i = 0; i < 4; i++) {
+      if(digitalRead(buttonPins[i]) == HIGH) {
+        digitalWrite(ledPins[i], HIGH);
+        delay(200);
+        digitalWrite(ledPins[i], LOW);
+        return i;
+      }
+    }
+  }
+}
+
+// Funktion, die aufgerufen wird, wenn der Spieler das Spiel verliert
+void spielVerloren() {
+  // Alle LEDs dreimal blinken lassen
+  for(int i = 0; i < 3; i++) {
+    for(int j = 0; j < 4; j++) {
+      digitalWrite(ledPins[j], HIGH);
+    }
+    delay(200);
+    for(int j = 0; j < 4; j++) {
+      digitalWrite(ledPins[j], LOW);
+    }
+    delay(200);
+  }
+  Serial.print("Spiel vorbei! Erreichte Stufe: ");
+  Serial.println(aktuellesLevel - 1);
+}
 
 void setup() {
    // Richtet die digitalen E/A-Pins ein
    pinMode(blueButton, INPUT);
    pinMode(redButton, INPUT);
-   pinMode(yellowButton, INPUT)
+   pinMode(yellowButton, INPUT);
    pinMode(greenButton, INPUT);
    pinMode(blueLED, OUTPUT);
    pinMode(redLED, OUTPUT);
@@ -34,7 +92,7 @@ void setup() {
    digitalWrite(yellowLED, HIGH);
    delay(100);
    digitalWrite(greenLED, HIGH);
-   delay(1000); // 1 Sekunde warten
+   delay(500); // 0.5 Sekunde warten
    digitalWrite(blueLED, LOW);
    delay(100);
    digitalWrite(redLED, LOW);
@@ -63,6 +121,8 @@ void loop() {
          digitalWrite(redLED, HIGH);
          Serial.println("Normal Game Mode Selected");
          delay(2000); // 2 Sekunde warten, um die Auswahl zu sehen
+         digitalWrite(blueLED, LOW);
+         digitalWrite(redLED, LOW);
       }
    }
    // Gelb & Grün = Schwerer Modus
@@ -75,6 +135,8 @@ void loop() {
          digitalWrite(greenLED, HIGH);
          Serial.println("Hard Game Mode Selected");
          delay(2000); // 2 Sekunde warten, um die Auswahl zu sehen
+         digitalWrite(yellowLED, LOW);
+         digitalWrite(greenLED, LOW);
       }
    }
    // Blau & Gelb = N-Back Modus (2 Back)
@@ -87,6 +149,8 @@ void loop() {
          digitalWrite(yellowLED, HIGH);
          Serial.println("N-Back Game Mode Selected");
          delay(2000); // 2 Sekunde warten, um die Auswahl zu sehen
+         digitalWrite(blueLED, LOW);
+         digitalWrite(yellowLED, LOW);
       }
    }
    // Rot & Grün = N-Back Modus (3 Back)
@@ -99,6 +163,8 @@ void loop() {
          digitalWrite(greenLED, HIGH);
          Serial.println("N-Back Game Mode Selected");
          delay(2000); // 2 Sekunde warten, um die Auswahl zu sehen
+         digitalWrite(redLED, LOW);
+         digitalWrite(greenLED, LOW);
       }
    }
    
@@ -107,8 +173,48 @@ void loop() {
       Serial.println("Starting Game...");
       // Starte Modus 1 Normal Game Mode
       if (gameModeSelect == 1) {
-         Serial.println("Starting Normal Game Mode");
-         // Hier kann der Code für den normalen Spielmodus eingefügt werden
+        Serial.println("Starting Normal Game Mode");
+        
+        // Sequenz zurücksetzen
+        aktuellesLevel = 0;
+        randomSeed(millis());  // Zufallsgenerator initialisieren
+        
+        while(true) {
+          // Neue Sequenz hinzufügen
+          spielSequenz[aktuellesLevel] = random(4);  // 0-3 für die vier Farben
+          aktuellesLevel++;
+          
+          // Sequenz anzeigen
+          delay(1000);
+          zeigeSequenz();
+          
+          // Spielereingabe abwarten und überprüfen
+          for(int i = 0; i < aktuellesLevel; i++) {
+            int spielerEingabe = warteAufEingabe();
+            
+            // Prüfen ob Eingabe korrekt ist
+            if(spielerEingabe != spielSequenz[i]) {
+              spielVerloren();
+              return;  // Zurück zur Hauptschleife
+            }
+            delay(200);
+          }
+          
+          // Spieler hat es geschafft, kurzes Erfolgssignal
+          for(int i = 0; i < 4; i++) {
+            digitalWrite(ledPins[i], HIGH);
+          }
+          delay(250);
+          for(int i = 0; i < 4; i++) {
+            digitalWrite(ledPins[i], LOW);
+          }
+          
+          // Prüfen ob maximales Level erreicht wurde
+          if(aktuellesLevel >= MAX_LEVEL) {
+            Serial.println("Gewonnen! Maximale Sequenz erreicht!");
+            return;
+          }
+        }
       }
 
 
