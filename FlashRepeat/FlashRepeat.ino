@@ -69,13 +69,19 @@ int warteAufEingabe() {
 
 // Funktion, die aufgerufen wird, wenn der Spieler das Spiel verliert
 void spielVerloren() {
-  // Verloren-Melodie abspielen
-  tone(buzzer, NOTE_G4, 200);
-  delay(200);
-  tone(buzzer, NOTE_E4, 200);
-  delay(200);
-  tone(buzzer, NOTE_C4, 400);
-  delay(400);
+  // Verloren-Melodie abspielen (absteigende Melodie mit Trauer-Effekt)
+  tone(buzzer, NOTE_G4, 300);  // Startet hoch
+  delay(300);
+  tone(buzzer, NOTE_E4, 300);  // Geht runter
+  delay(300);
+  tone(buzzer, NOTE_C4, 300);  // Noch tiefer
+  delay(300);
+  tone(buzzer, NOTE_B4, 150);  // Kurzer hoher Ton
+  delay(150);
+  tone(buzzer, NOTE_G4, 150);  // Zurück nach unten
+  delay(150);
+  tone(buzzer, NOTE_E4, 500);  // Langer Schlusston
+  delay(500);
   noTone(buzzer);
   // Alle LEDs dreimal blinken lassen
   for(int i = 0; i < 3; i++) {
@@ -90,6 +96,38 @@ void spielVerloren() {
   }
   Serial.print("Spiel vorbei! Erreichte Stufe: ");
   Serial.println(aktuellesLevel - 1);
+}
+
+// Funktion die aufgerufen wird wenn der Spieler gewonnen hat
+void spielGewonnen() {
+  // Erfolgs-Melodie abspielen (aufsteigende Melodie)
+  tone(buzzerPin, NOTE_C4, 150);
+  delay(150);
+  tone(buzzerPin, NOTE_E4, 150);
+  delay(150);
+  tone(buzzerPin, NOTE_G4, 150);
+  delay(150);
+  tone(buzzerPin, NOTE_C5, 400);
+  delay(400);
+  noTone(buzzerPin);
+  
+  // Lauflicht 5 mal vor und zurück
+  for(int durchlauf = 0; durchlauf < 5; durchlauf++) {
+    // Vorwärts
+    for(int i = 0; i < 4; i++) {
+      digitalWrite(ledPins[i], HIGH);
+      delay(100);
+      digitalWrite(ledPins[i], LOW);
+    }
+    // Rückwärts
+    for(int i = 2; i >= 0; i--) {
+      digitalWrite(ledPins[i], HIGH);
+      delay(100);
+      digitalWrite(ledPins[i], LOW);
+    }
+  }
+  
+  Serial.println("Gewonnen! Maximale Sequenz erreicht!");
 }
 
 void setup() {
@@ -144,6 +182,26 @@ void setup() {
 }
 
 void loop() {
+   // Prüfen ob alle 4 Tasten gleichzeitig gedrückt werden
+   if (digitalRead(blueButton) == HIGH && digitalRead(redButton) == HIGH && 
+       digitalRead(yellowButton) == HIGH && digitalRead(greenButton) == HIGH) {
+      delay(2000); // 2 Sekunden warten
+      // Prüfen ob immer noch alle Tasten gedrückt sind
+      if (digitalRead(blueButton) == HIGH && digitalRead(redButton) == HIGH && 
+          digitalRead(yellowButton) == HIGH && digitalRead(greenButton) == HIGH) {
+         // Alle LEDs einschalten zur Bestätigung
+         for(int i = 0; i < 4; i++) {
+            digitalWrite(ledPins[i], HIGH);
+         }
+         delay(500);
+         for(int i = 0; i < 4; i++) {
+            digitalWrite(ledPins[i], LOW);
+         }
+         spielGewonnen(); // Gewonnen-Sequenz abspielen
+         return;
+      }
+   }
+
    // Auswahl des Spielmodus mit dem gleichzeiten drücken von Tasten für 50ms. Die Wahl wird bestätigt mit dem Leuchten der korrespondierenden LED.
    // Blau & Rot = Normales Spiel
    if (digitalRead(blueButton) == HIGH && digitalRead(redButton) == HIGH) {
@@ -245,34 +303,7 @@ void loop() {
           
           // Prüfen ob maximales Level erreicht wurde
           if(aktuellesLevel >= MAX_LEVEL) {
-            // Erfolgs-Melodie abspielen (aufsteigende Melodie)
-            tone(buzzerPin, NOTE_C4, 150);
-            delay(150);
-            tone(buzzerPin, NOTE_E4, 150);
-            delay(150);
-            tone(buzzerPin, NOTE_G4, 150);
-            delay(150);
-            tone(buzzerPin, NOTE_C5, 400);
-            delay(400);
-            noTone(buzzerPin);
-            
-            // Lauflicht 5 mal vor und zurück
-            for(int durchlauf = 0; durchlauf < 5; durchlauf++) {
-              // Vorwärts
-              for(int i = 0; i < 4; i++) {
-                digitalWrite(ledPins[i], HIGH);
-                delay(100);
-                digitalWrite(ledPins[i], LOW);
-              }
-              // Rückwärts
-              for(int i = 2; i >= 0; i--) {
-                digitalWrite(ledPins[i], HIGH);
-                delay(100);
-                digitalWrite(ledPins[i], LOW);
-              }
-            }
-            
-            Serial.println("Gewonnen! Maximale Sequenz erreicht!");
+            spielGewonnen();
             return;
           }
         }
