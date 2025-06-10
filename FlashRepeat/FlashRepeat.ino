@@ -182,14 +182,13 @@ void setup() {
 }
 
 void loop() {
-   // Prüfen ob alle 4 Tasten gleichzeitig gedrückt werden
-   if (digitalRead(blueButton) == HIGH && digitalRead(redButton) == HIGH && 
-       digitalRead(yellowButton) == HIGH && digitalRead(greenButton) == HIGH) {
-      delay(2000); // 2 Sekunden warten
-      // Prüfen ob immer noch alle Tasten gedrückt sind
-      if (digitalRead(blueButton) == HIGH && digitalRead(redButton) == HIGH && 
-          digitalRead(yellowButton) == HIGH && digitalRead(greenButton) == HIGH) {
-         // Alle LEDs einschalten zur Bestätigung
+   // Prüfen ob die blaue Taste für 5 Sekunden gehalten wird. Geht in den Gewonnen-Modus.
+   if (digitalRead(blueButton) == HIGH) {
+      digitalWrite(blueLED, HIGH);  // Visuelle Rückmeldung
+      delay(5000);  // 3 Sekunden warten
+      if (digitalRead(blueButton) == HIGH) {  // Prüfen ob Taste noch gedrückt ist
+         digitalWrite(blueLED, LOW);
+         // Bestätigungsblinken mit allen LEDs
          for(int i = 0; i < 4; i++) {
             digitalWrite(ledPins[i], HIGH);
          }
@@ -198,8 +197,12 @@ void loop() {
             digitalWrite(ledPins[i], LOW);
          }
          spielGewonnen(); // Gewonnen-Sequenz abspielen
+         while(digitalRead(blueButton) == HIGH) {  // Warten bis Taste losgelassen wird
+            delay(50);
+         }
          return;
       }
+      digitalWrite(blueLED, LOW);
    }
 
    // Auswahl des Spielmodus mit dem gleichzeiten drücken von Tasten für 50ms. Die Wahl wird bestätigt mit dem Leuchten der korrespondierenden LED.
