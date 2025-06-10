@@ -27,6 +27,10 @@ Main Branch Test
 #define NOTE_G4  392
 #define NOTE_E4  330
 #define NOTE_C4  262
+#define NOTE_A4  440
+#define NOTE_B4  494
+#define NOTE_C5  523
+
 
 // Spiel-Variablen 
 #define MAX_LEVEL 100
@@ -117,18 +121,24 @@ void setup() {
    delay(100);
    digitalWrite(greenLED, LOW);
    delay(100);
+   tone(buzzerPin, NOTE_C4, 200);
+   delay(200);
+   tone(buzzerPin, NOTE_E4, 200);
+   delay(200);
    tone(buzzerPin, NOTE_G4, 200);
    delay(200);
    tone(buzzerPin, NOTE_E4, 200);
    delay(200);
    tone(buzzerPin, NOTE_C4, 200);
+   delay(200);
+   noTone(buzzerPin);
 
 
 
    // Serial Monitor initialisieren
    Serial.begin(9600);
    Serial.println("Simon Game Ready!");
-   Serial.println("Press a button to start the game.");
+   Serial.println("Press two buttons to start the game.");
    // Spiel bereit für Modusauswahl
 
 }
@@ -235,6 +245,33 @@ void loop() {
           
           // Prüfen ob maximales Level erreicht wurde
           if(aktuellesLevel >= MAX_LEVEL) {
+            // Erfolgs-Melodie abspielen (aufsteigende Melodie)
+            tone(buzzerPin, NOTE_C4, 150);
+            delay(150);
+            tone(buzzerPin, NOTE_E4, 150);
+            delay(150);
+            tone(buzzerPin, NOTE_G4, 150);
+            delay(150);
+            tone(buzzerPin, NOTE_C5, 400);
+            delay(400);
+            noTone(buzzerPin);
+            
+            // Lauflicht 5 mal vor und zurück
+            for(int durchlauf = 0; durchlauf < 5; durchlauf++) {
+              // Vorwärts
+              for(int i = 0; i < 4; i++) {
+                digitalWrite(ledPins[i], HIGH);
+                delay(100);
+                digitalWrite(ledPins[i], LOW);
+              }
+              // Rückwärts
+              for(int i = 2; i >= 0; i--) {
+                digitalWrite(ledPins[i], HIGH);
+                delay(100);
+                digitalWrite(ledPins[i], LOW);
+              }
+            }
+            
             Serial.println("Gewonnen! Maximale Sequenz erreicht!");
             return;
           }
@@ -251,6 +288,7 @@ void loop() {
       digitalWrite(redLED, LOW);
       digitalWrite(yellowLED, LOW);
       digitalWrite(greenLED, LOW);
+      digitalWrite(buzzerPin, LOW);
       gameModeSelect = 0; // Zurücksetzen der Moduswahl
    }
 
