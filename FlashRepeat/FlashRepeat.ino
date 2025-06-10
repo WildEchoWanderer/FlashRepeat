@@ -23,6 +23,10 @@ Main Branch Test
 #define redLED 6
 #define yellowLED 5
 #define greenLED 4
+#define buzzerPin 8
+#define NOTE_G4  392
+#define NOTE_E4  330
+#define NOTE_C4  262
 
 // Spiel-Variablen 
 #define MAX_LEVEL 100
@@ -30,6 +34,7 @@ int spielSequenz[MAX_LEVEL];
 int aktuellesLevel = 0;
 int buttonPins[] = {blueButton, redButton, yellowButton, greenButton};
 int ledPins[] = {blueLED, redLED, yellowLED, greenLED};
+int buzzer = buzzerPin;
 int gameModeSelect = 0;  // wählt den Spielmodus
 
 // Hilfsfunktionen für das Spiel
@@ -60,6 +65,14 @@ int warteAufEingabe() {
 
 // Funktion, die aufgerufen wird, wenn der Spieler das Spiel verliert
 void spielVerloren() {
+  // Verloren-Melodie abspielen
+  tone(buzzer, NOTE_G4, 200);
+  delay(200);
+  tone(buzzer, NOTE_E4, 200);
+  delay(200);
+  tone(buzzer, NOTE_C4, 400);
+  delay(400);
+  noTone(buzzer);
   // Alle LEDs dreimal blinken lassen
   for(int i = 0; i < 3; i++) {
     for(int j = 0; j < 4; j++) {
@@ -85,6 +98,7 @@ void setup() {
    pinMode(redLED, OUTPUT);
    pinMode(yellowLED, OUTPUT);
    pinMode(greenLED, OUTPUT);
+   pinMode(buzzerPin, OUTPUT);
 
    // Legt den Anfangszustand der LEDs fest (Selbsttest)
    digitalWrite(blueLED, HIGH);
@@ -102,6 +116,14 @@ void setup() {
    digitalWrite(yellowLED, LOW);
    delay(100);
    digitalWrite(greenLED, LOW);
+   delay(100);
+   tone(buzzerPin, NOTE_G4, 200);
+   delay(200);
+   tone(buzzerPin, NOTE_E4, 200);
+   delay(200);
+   tone(buzzerPin, NOTE_C4, 200);
+
+
 
    // Serial Monitor initialisieren
    Serial.begin(9600);
