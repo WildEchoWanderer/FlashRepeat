@@ -7,9 +7,6 @@ Die Tasten sind wie folgt zugeordnet:
 - Blau & Gelb: N-Back Modus (2 Back)
 - Rot & Grün: N-Back Modus (3 Back)
 
-Testbrancheintrag- merge test
-
-Main Branch Test
 */
 
 #include <Arduino.h>
@@ -171,16 +168,13 @@ void setup() {
    delay(200);
    noTone(buzzerPin);
 
-
-
    // Serial Monitor initialisieren
    Serial.begin(9600);
-   Serial.println("Simon Game Ready!");
+   Serial.println("FlashRepeat Ready!");
    Serial.println("Press two buttons to start the game.");
    // Spiel bereit für Modusauswahl
 
 }
-
 void loop() {
    // Prüfen ob die blaue Taste für 5 Sekunden gehalten wird. Geht in den Gewonnen-Modus.
    if (digitalRead(blueButton) == HIGH) {
@@ -220,6 +214,7 @@ void loop() {
          digitalWrite(redLED, LOW);
       }
    }
+   
    // Gelb & Grün = Schwerer Modus
    if (digitalRead(yellowButton) == HIGH && digitalRead(greenButton) == HIGH) {
       delay(50); // Entprellung
@@ -234,6 +229,7 @@ void loop() {
          digitalWrite(greenLED, LOW);
       }
    }
+   
    // Blau & Gelb = N-Back Modus (2 Back)
    if (digitalRead(blueButton) == HIGH && digitalRead(yellowButton) == HIGH) {
       delay(50); // Entprellung
@@ -248,6 +244,7 @@ void loop() {
          digitalWrite(yellowLED, LOW);
       }
    }
+   
    // Rot & Grün = N-Back Modus (3 Back)
    if (digitalRead(redButton) == HIGH && digitalRead(greenButton) == HIGH) {
       delay(50); // Entprellung
@@ -311,9 +308,53 @@ void loop() {
           }
         }
       }
-
-
-
+      
+      //Starte Modus 2 Schwerer Modus (schnellere Anzeigedauer der Sequenz)
+      if (gameModeSelect == 2) {
+        Serial.println("Starting Hard Game Mode");
+        
+        // Sequenz zurücksetzen
+        aktuellesLevel = 0;
+        randomSeed(millis());  // Zufallsgenerator initialisieren
+        
+        while(true) {
+          // Neue Sequenz hinzufügen
+          spielSequenz[aktuellesLevel] = random(4);  // 0-3 für die vier Farben
+          aktuellesLevel++;
+          
+          // Sequenz anzeigen (schneller)
+          delay(500);
+          zeigeSequenz();
+          
+          // Spielereingabe abwarten und überprüfen
+          for(int i = 0; i < aktuellesLevel; i++) {
+            int spielerEingabe = warteAufEingabe();
+            
+            // Prüfen ob Eingabe korrekt ist
+            if(spielerEingabe != spielSequenz[i]) {
+              spielVerloren();
+              return;  // Zurück zur Hauptschleife
+            }
+            delay(100); // Kürzere Wartezeit für schwereren Modus
+          }
+          
+          // Spieler hat es geschafft, kurzes Erfolgssignal
+          for(int i = 0; i < 4; i++) {
+            digitalWrite(ledPins[i], HIGH);
+          }
+          delay(200);
+          for(int i = 0; i < 4; i++) {
+            digitalWrite(ledPins[i], LOW);
+          }
+          
+          // Prüfen ob maximales Level erreicht wurde
+          if(aktuellesLevel >= MAX_LEVEL) {
+            spielGewonnen();
+            return;
+          }
+        }
+      }
+      
 
       // Hier kann der Code für den gewählten Spielmodus eingefügt werden
       // Zum Beispiel: startGame(gameModeSelect);
