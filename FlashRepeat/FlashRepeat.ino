@@ -349,6 +349,7 @@ void loop() {
    if (gameModeSelect > 0) {
       boolean configuring = true;
       unsigned long lastInputTime = millis();
+      int lastLevelDisplay = maxLevel;
       lcd.clear();
       lcd.print("Max. Level: ");
       lcd.print(maxLevel);
@@ -356,31 +357,39 @@ void loop() {
       lcd.print("B10 G1 R-1 Y-10");
       
       while(configuring) {
+        bool changed = false;
         if(digitalRead(blueButton) == HIGH) {
           maxLevel = min(maxLevel + 10, MAX_SEQUENCE_LENGTH);
           lastInputTime = millis();
+          changed = true;
           delay(200);
         }
         if(digitalRead(yellowButton) == HIGH) {
           maxLevel = max(maxLevel - 10, MIN_LEVEL);
           lastInputTime = millis();
+          changed = true;
           delay(200);
         }
         if(digitalRead(redButton) == HIGH) {
           maxLevel = min(maxLevel + 1, MAX_SEQUENCE_LENGTH);
           lastInputTime = millis();
+          changed = true;
           delay(200);
         }
         if(digitalRead(greenButton) == HIGH) {
           maxLevel = max(maxLevel - 1, MIN_LEVEL);
           lastInputTime = millis();
+          changed = true;
           delay(200);
         }
-        // Anzeige aktualisieren
-        lcd.setCursor(11,0);
-        lcd.print("    "); // Lösche alte Zahl
-        lcd.setCursor(11,0);
-        lcd.print(maxLevel);
+        // Anzeige nur aktualisieren, wenn sich der Wert geändert hat
+        if (changed && maxLevel != lastLevelDisplay) {
+          lcd.setCursor(11,0);
+          lcd.print("    "); // Lösche alte Zahl
+          lcd.setCursor(11,0);
+          lcd.print(maxLevel);
+          lastLevelDisplay = maxLevel;
+        }
         // Prüfe ob 5 Sekunden ohne Eingabe vergangen sind
         if (millis() - lastInputTime > 5000) {
           configuring = false;
