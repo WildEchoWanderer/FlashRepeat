@@ -40,15 +40,18 @@ Die Tasten sind wie folgt zugeordnet:
 #define MAX_LEVEL 100
 int spielSequenz[MAX_LEVEL];
 int aktuellesLevel = 0;
-int buttonPins[] = {blueButton, redButton, yellowButton, greenButton};
-int ledPins[] = {blueLED, redLED, yellowLED, greenLED};
+int buttonPins[] = {blueButton, redButton, greenButton, yellowButton};
+int ledPins[] = {blueLED, redLED, greenLED, yellowLED };
 int buzzer = buzzerPin;
 int gameModeSelect = 0;  // wählt den Spielmodus
 
-// Display initialisieren (Adresse 0x27, 16x2)
-LiquidCrystal_I2C lcd(0x27, 16, 2);
+// Display initialisieren (Adresse 0x20, 16x2)
+LiquidCrystal_I2C lcd(0x20, 16, 2);
 
 // Hilfsfunktionen für das Spiel
+
+// Funktionsprototypen
+void ledMitTon(int farbe, int dauer = 500);
 
 // Zeigt die aktuelle Sequenz an, indem die LEDs nacheinander leuchten
 void zeigeSequenz() {
@@ -71,18 +74,18 @@ int warteAufEingabe() {
 
 // Funktion, die aufgerufen wird, wenn der Spieler das Spiel verliert
 void spielVerloren() {
-  // Verloren-Melodie abspielen (absteigende Melodie mit Trauer-Effekt)
-  tone(buzzer, NOTE_G4, 300);  // Startet hoch
+  // Verloren-Melodie abspielen
+  tone(buzzer, NOTE_G4, 300);  
   delay(300);
-  tone(buzzer, NOTE_E4, 300);  // Geht runter
+  tone(buzzer, NOTE_E4, 300);  
   delay(300);
-  tone(buzzer, NOTE_C4, 300);  // Noch tiefer
+  tone(buzzer, NOTE_C4, 300);  
   delay(300);
-  tone(buzzer, NOTE_B4, 150);  // Kurzer hoher Ton
+  tone(buzzer, NOTE_B4, 150);  
   delay(150);
-  tone(buzzer, NOTE_G4, 150);  // Zurück nach unten
+  tone(buzzer, NOTE_G4, 150);  
   delay(150);
-  tone(buzzer, NOTE_E4, 500);  // Langer Schlusston
+  tone(buzzer, NOTE_E4, 500);  
   delay(500);
   noTone(buzzer);
   // Alle LEDs dreimal blinken lassen
@@ -119,7 +122,7 @@ void spielVerloren() {
 
 // Funktion die aufgerufen wird wenn der Spieler gewonnen hat
 void spielGewonnen() {
-  // Erfolgs-Melodie abspielen (aufsteigende Melodie)
+  // Erfolgs-Melodie abspielen
   tone(buzzerPin, NOTE_C4, 150);
   delay(150);
   tone(buzzerPin, NOTE_E4, 150);
@@ -146,7 +149,7 @@ void spielGewonnen() {
     }
   }
   
-  Serial.println("Gewonnen! Maximale Sequenz erreicht!");
+  Serial.println("Gewonnen! Maximale Sequenz erreicht! Glückwunsch!");
   
   lcd.clear();
   lcd.setCursor(0,0);
@@ -200,17 +203,17 @@ void setup() {
    delay(100);
    digitalWrite(redLED, HIGH);
    delay(100);
-   digitalWrite(yellowLED, HIGH);
-   delay(100);
    digitalWrite(greenLED, HIGH);
+   delay(100);
+   digitalWrite(yellowLED, HIGH);
    delay(500); // 0.5 Sekunde warten
    digitalWrite(blueLED, LOW);
    delay(100);
    digitalWrite(redLED, LOW);
    delay(100);
-   digitalWrite(yellowLED, LOW);
-   delay(100);
    digitalWrite(greenLED, LOW);
+   delay(100);
+   digitalWrite(yellowLED, LOW);
    delay(100);
    tone(buzzerPin, NOTE_C4, 200);
    delay(200);
@@ -244,7 +247,7 @@ void loop() {
    // Prüfen ob die blaue Taste für 5 Sekunden gehalten wird. Geht in den Gewonnen-Modus.
    if (digitalRead(blueButton) == HIGH) {
       digitalWrite(blueLED, HIGH);  // Visuelle Rückmeldung
-      delay(5000);  // 3 Sekunden warten
+      delay(5000);  // 5 Sekunden warten
       if (digitalRead(blueButton) == HIGH) {  // Prüfen ob Taste noch gedrückt ist
          digitalWrite(blueLED, LOW);
          // Bestätigungsblinken mit allen LEDs
@@ -394,7 +397,7 @@ void loop() {
           aktuellesLevel++;
           
           // Sequenz anzeigen (schneller)
-          delay(500);
+          delay(200);
           zeigeSequenz();
           
           // Spielereingabe abwarten und überprüfen
@@ -469,3 +472,4 @@ void loop() {
       lcd.setCursor(0,1);
       lcd.print("Score: 0");
    }
+}
