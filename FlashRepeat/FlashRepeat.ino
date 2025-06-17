@@ -6,7 +6,7 @@ Die Tasten sind wie folgt zugeordnet:
 - Gelb & Grün: Schwerer Modus
 - Blau & Gelb: N-Back Modus (2 Back) (noch nicht implementiert)
 - Rot & Grün: N-Back Modus (3 Back) (noch nicht implementiert)
-
+N-Back development
 */
 
 #include <Arduino.h>
