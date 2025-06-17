@@ -11,7 +11,7 @@ Die Tasten sind wie folgt zugeordnet:
 
 #include <Arduino.h>
 #include <Wire.h>
-#include <LiquidCrystal_I2C.h>
+#include <Adafruit_LiquidCrystal.h>
 
 // Pin-Definitionen für Tasten und LEDs
 #define blueButton 13
@@ -45,8 +45,8 @@ int ledPins[] = {blueLED, redLED, greenLED, yellowLED };
 int buzzer = buzzerPin;
 int gameModeSelect = 0;  // wählt den Spielmodus
 
-// Display initialisieren (Adresse 0x20, 16x2)
-LiquidCrystal_I2C lcd(0x20, 16, 2);
+// Display initialisieren (Adafruit-Library, Adresse 0x20, 16x2)
+Adafruit_LiquidCrystal lcd(0); // Wenn keine Jumper auf A0-A2 gelötet sind
 
 // Hilfsfunktionen für das Spiel
 
@@ -114,10 +114,8 @@ void spielVerloren() {
   lcd.print("Score: ");
   lcd.print(aktuellesLevel-1);
   delay(1500);
-  lcd.clear();
-  lcd.print("Nochmal?");
   delay(1000);
-  lcd.clear();
+  gameModeSelect = 0; // Zurück zum Auswahlmodus
 }
 
 // Funktion die aufgerufen wird wenn der Spieler gewonnen hat
@@ -163,10 +161,8 @@ void spielGewonnen() {
   lcd.print("Score: ");
   lcd.print(aktuellesLevel);
   delay(1500);
-  lcd.clear();
-  lcd.print("Super!");
   delay(1000);
-  lcd.clear();
+  gameModeSelect = 0; // Zurück zum Auswahlmodus
 }
 
 // Hilfsfunktion: LED mit Ton
@@ -187,6 +183,16 @@ void ledMitTon(int farbe, int dauer = 500) {
 }
 
 void setup() {
+   Serial.begin(9600);
+   Serial.println("FlashRepeat Ready!");
+   
+   // Display initialisieren
+   if (!lcd.begin(16, 2)) {
+      Serial.println("LCD init failed! Check wiring & address.");
+      while(1);
+   }
+   Serial.println("LCD initialized successfully.");
+   
    // Richtet die digitalen E/A-Pins ein
    pinMode(blueButton, INPUT);
    pinMode(redButton, INPUT);
@@ -198,6 +204,12 @@ void setup() {
    pinMode(greenLED, OUTPUT);
    pinMode(buzzerPin, OUTPUT);
 
+   // Display Startbildschirm
+   lcd.clear();
+   lcd.print("FlashRepeat!");
+   lcd.setCursor(0, 1);
+   lcd.print("Bereit...");
+
    // Legt den Anfangszustand der LEDs fest (Selbsttest)
    digitalWrite(blueLED, HIGH);
    delay(100);
@@ -206,7 +218,7 @@ void setup() {
    digitalWrite(greenLED, HIGH);
    delay(100);
    digitalWrite(yellowLED, HIGH);
-   delay(500); // 0.5 Sekunde warten
+   delay(500);
    digitalWrite(blueLED, LOW);
    delay(100);
    digitalWrite(redLED, LOW);
@@ -215,6 +227,8 @@ void setup() {
    delay(100);
    digitalWrite(yellowLED, LOW);
    delay(100);
+   
+   // Startmelodie
    tone(buzzerPin, NOTE_C4, 200);
    delay(200);
    tone(buzzerPin, NOTE_E4, 200);
@@ -226,24 +240,23 @@ void setup() {
    tone(buzzerPin, NOTE_C4, 200);
    delay(200);
    noTone(buzzerPin);
-
-   // Serial Monitor initialisieren
-   Serial.begin(9600);
-   Serial.println("FlashRepeat Ready!");
-   Serial.println("Press two buttons to start the game.");
    
-   lcd.init();
-   lcd.backlight();
-   lcd.clear();
-   lcd.setCursor(0,0);
-   lcd.print("FlashRepeat!");
-   lcd.setCursor(0,1);
-   lcd.print("Bereit...");
    delay(1000);
-   lcd.clear();
 }
 
 void loop() {
+   // Zeige Startbildschirm wenn kein Spielmodus aktiv ist
+   if (gameModeSelect == 0) {
+      static unsigned long lastUpdate = 0;
+      if (millis() - lastUpdate >= 3000) { // Alle 3 Sekunden aktualisieren
+         lcd.clear();
+         lcd.print("FlashRepeat!");
+         lcd.setCursor(0,1);
+         lcd.print("Waehle Modus");
+         lastUpdate = millis();
+      }
+   }
+
    // Prüfen ob die blaue Taste für 5 Sekunden gehalten wird. Geht in den Gewonnen-Modus.
    if (digitalRead(blueButton) == HIGH) {
       digitalWrite(blueLED, HIGH);  // Visuelle Rückmeldung
@@ -277,7 +290,11 @@ void loop() {
          digitalWrite(blueLED, HIGH);
          digitalWrite(redLED, HIGH);
          Serial.println("Normal Game Mode Selected");
-         delay(2000); // 2 Sekunde warten, um die Auswahl zu sehen
+         lcd.clear();
+         lcd.print("Normal Mode");
+         lcd.setCursor(0, 1);
+         lcd.print("Selected!");
+         delay(2000);
          digitalWrite(blueLED, LOW);
          digitalWrite(redLED, LOW);
       }
@@ -292,7 +309,11 @@ void loop() {
          digitalWrite(yellowLED, HIGH);
          digitalWrite(greenLED, HIGH);
          Serial.println("Hard Game Mode Selected");
-         delay(2000); // 2 Sekunde warten, um die Auswahl zu sehen
+         lcd.clear();
+         lcd.print("Hard Mode");
+         lcd.setCursor(0, 1);
+         lcd.print("Selected!");
+         delay(2000);
          digitalWrite(yellowLED, LOW);
          digitalWrite(greenLED, LOW);
       }
@@ -307,7 +328,11 @@ void loop() {
          digitalWrite(blueLED, HIGH);
          digitalWrite(yellowLED, HIGH);
          Serial.println("N-Back Game Mode Selected");
-         delay(2000); // 2 Sekunde warten, um die Auswahl zu sehen
+         lcd.clear();
+         lcd.print("2-Back Mode");
+         lcd.setCursor(0, 1);
+         lcd.print("Selected!");
+         delay(2000);
          digitalWrite(blueLED, LOW);
          digitalWrite(yellowLED, LOW);
       }
@@ -322,7 +347,11 @@ void loop() {
          digitalWrite(redLED, HIGH);
          digitalWrite(greenLED, HIGH);
          Serial.println("N-Back Game Mode Selected");
-         delay(2000); // 2 Sekunde warten, um die Auswahl zu sehen
+         lcd.clear();
+         lcd.print("3-Back Mode");
+         lcd.setCursor(0, 1);
+         lcd.print("Selected!");
+         delay(2000);
          digitalWrite(redLED, LOW);
          digitalWrite(greenLED, LOW);
       }
@@ -344,6 +373,11 @@ void loop() {
           spielSequenz[aktuellesLevel] = random(4);  // 0-3 für die vier Farben
           aktuellesLevel++;
           
+          // Display auf Score-Anzeige umstellen
+          lcd.clear();
+          lcd.print("Level: ");
+          lcd.print(aktuellesLevel);
+          
           // Sequenz anzeigen
           delay(1000);
           zeigeSequenz();
@@ -355,7 +389,7 @@ void loop() {
             // Prüfen ob Eingabe korrekt ist
             if(spielerEingabe != spielSequenz[i]) {
               spielVerloren();
-              return;  // Zurück zur Hauptschleife
+              return;  // Zurück zur Modusauswahl
             }
             delay(200);
           }
@@ -407,7 +441,7 @@ void loop() {
             // Prüfen ob Eingabe korrekt ist
             if(spielerEingabe != spielSequenz[i]) {
               spielVerloren();
-              return;  // Zurück zur Hauptschleife
+              return;  // Zurück zur Modusauswahl
             }
             delay(100); // Kürzere Wartezeit für schwereren Modus
           }
@@ -446,30 +480,10 @@ void loop() {
       gameModeSelect = 0; // Zurücksetzen der Moduswahl
    }
 
-   // Nach Moduswahl Display aktualisieren
-   if (gameModeSelect == 1) {
+   // Start des gewählten Modus
+   if (gameModeSelect > 0) {
       lcd.clear();
-      lcd.setCursor(0,0);
-      lcd.print("Modus: Normal");
-      lcd.setCursor(0,1);
-      lcd.print("Score: 0");
-   } else if (gameModeSelect == 2) {
-      lcd.clear();
-      lcd.setCursor(0,0);
-      lcd.print("Modus: Hard");
-      lcd.setCursor(0,1);
-      lcd.print("Score: 0");
-   } else if (gameModeSelect == 3) {
-      lcd.clear();
-      lcd.setCursor(0,0);
-      lcd.print("Modus: 2-Back");
-      lcd.setCursor(0,1);
-      lcd.print("Score: 0");
-   } else if (gameModeSelect == 4) {
-      lcd.clear();
-      lcd.setCursor(0,0);
-      lcd.print("Modus: 3-Back");
-      lcd.setCursor(0,1);
-      lcd.print("Score: 0");
+      lcd.print("Starting...");
+      delay(1000);
    }
 }
