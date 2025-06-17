@@ -13,6 +13,9 @@ Die Tasten sind wie folgt zugeordnet:
 #include <Wire.h>
 #include <Adafruit_LiquidCrystal.h>
 
+#define MAX_SEQUENCE_LENGTH 100  // Maximale Länge für das Sequenz-Array
+#define MIN_LEVEL 9  // Minimale Sequenzlänge
+
 // Pin-Definitionen für Tasten und LEDs
 #define blueButton 13
 #define redButton 12
@@ -30,20 +33,22 @@ Die Tasten sind wie folgt zugeordnet:
 #define NOTE_B4  494
 #define NOTE_C5  523
 
-// Neue Tonzuordnung für Farben
-#define NOTE_BLU 196   // Blau: G3 (tief)
+// Tonzuordnung für Farben
+#define NOTE_BLU 196   // Blau: G3
 #define NOTE_GRN 262   // Grün: C4
 #define NOTE_YEL 330   // Gelb: E4
 #define NOTE_RED 523   // Rot: C5
 
 // Spiel-Variablen 
-#define MAX_LEVEL 100
-int spielSequenz[MAX_LEVEL];
+int spielSequenz[MAX_SEQUENCE_LENGTH];
 int aktuellesLevel = 0;
 int buttonPins[] = {blueButton, redButton, greenButton, yellowButton};
 int ledPins[] = {blueLED, redLED, greenLED, yellowLED };
 int buzzer = buzzerPin;
 int gameModeSelect = 0;  // wählt den Spielmodus
+
+// Variablen für die Sequenzlänge
+int maxLevel = 20; // Standardwert für die maximale Sequenzlänge
 
 // Display initialisieren (Adafruit-Library, Adresse 0x20, 16x2)
 Adafruit_LiquidCrystal lcd(0); // Wenn keine Jumper auf A0-A2 gelötet sind
@@ -74,37 +79,43 @@ int warteAufEingabe() {
 
 // Funktion, die aufgerufen wird, wenn der Spieler das Spiel verliert
 void spielVerloren() {
-  // Verloren-Melodie abspielen
-  tone(buzzer, NOTE_G4, 300);  
-  delay(300);
-  tone(buzzer, NOTE_E4, 300);  
-  delay(300);
-  tone(buzzer, NOTE_C4, 300);  
-  delay(300);
-  tone(buzzer, NOTE_B4, 150);  
-  delay(150);
-  tone(buzzer, NOTE_G4, 150);  
-  delay(150);
-  tone(buzzer, NOTE_E4, 500);  
-  delay(500);
-  noTone(buzzer);
-  // Alle LEDs dreimal blinken lassen
+  // Sofort Display aktualisieren
+  lcd.clear();
+  lcd.setCursor(0,0);
+  lcd.print("Verloren!");
+  lcd.setCursor(0,1);
+  lcd.print("Score: ");
+  lcd.print(aktuellesLevel-1);
+  
+  // Verloren-Melodie und LED-Animation gleichzeitig
+  unsigned long noteStart = millis();
+  int currentNote = 0;
+  int notes[] = {NOTE_G4, NOTE_E4, NOTE_C4, NOTE_B4, NOTE_G4, NOTE_E4};
+  int noteDurations[] = {300, 300, 300, 150, 150, 500};
+  int totalNotes = 6;
+  
+  // Drei Durchläufe für LED-Blinken
   for(int i = 0; i < 3; i++) {
+    // LEDs an
     for(int j = 0; j < 4; j++) {
       digitalWrite(ledPins[j], HIGH);
     }
+    
+    // Während LED an ist, spiele Töne
+    if(currentNote < totalNotes) {
+      tone(buzzer, notes[currentNote], noteDurations[currentNote]);
+      currentNote++;
+    }
+    
     delay(200);
+    
+    // LEDs aus
     for(int j = 0; j < 4; j++) {
       digitalWrite(ledPins[j], LOW);
     }
     delay(200);
   }
-  Serial.print("Spiel vorbei! Erreichte Stufe: ");
-  Serial.println(aktuellesLevel - 1);
-  
-  lcd.clear();
-  lcd.setCursor(0,0);
-  lcd.print("Verloren!");
+  noTone(buzzer);
   for(int i=0; i<16; i++) {
     lcd.setCursor(i,1);
     lcd.print("-");
@@ -257,29 +268,6 @@ void loop() {
       }
    }
 
-   // Prüfen ob die blaue Taste für 5 Sekunden gehalten wird. Geht in den Gewonnen-Modus.
-   if (digitalRead(blueButton) == HIGH) {
-      digitalWrite(blueLED, HIGH);  // Visuelle Rückmeldung
-      delay(5000);  // 5 Sekunden warten
-      if (digitalRead(blueButton) == HIGH) {  // Prüfen ob Taste noch gedrückt ist
-         digitalWrite(blueLED, LOW);
-         // Bestätigungsblinken mit allen LEDs
-         for(int i = 0; i < 4; i++) {
-            digitalWrite(ledPins[i], HIGH);
-         }
-         delay(500);
-         for(int i = 0; i < 4; i++) {
-            digitalWrite(ledPins[i], LOW);
-         }
-         spielGewonnen(); // Gewonnen-Sequenz abspielen
-         while(digitalRead(blueButton) == HIGH) {  // Warten bis Taste losgelassen wird
-            delay(50);
-         }
-         return;
-      }
-      digitalWrite(blueLED, LOW);
-   }
-
    // Auswahl des Spielmodus mit dem gleichzeiten drücken von Tasten für 50ms. Die Wahl wird bestätigt mit dem Leuchten der korrespondierenden LED.
    // Blau & Rot = Normales Spiel
    if (digitalRead(blueButton) == HIGH && digitalRead(redButton) == HIGH) {
@@ -357,6 +345,54 @@ void loop() {
       }
    }
    
+   // Konfiguration der Sequenzlänge NACH der Moduswahl, aber VOR dem Spielstart
+   if (gameModeSelect > 0) {
+      boolean configuring = true;
+      unsigned long lastInputTime = millis();
+      lcd.clear();
+      lcd.print("Max. Level: ");
+      lcd.print(maxLevel);
+      lcd.setCursor(0,1);
+      lcd.print("B10 G1 R-1 Y-10");
+      
+      while(configuring) {
+        if(digitalRead(blueButton) == HIGH) {
+          maxLevel = min(maxLevel + 10, MAX_SEQUENCE_LENGTH);
+          lastInputTime = millis();
+          delay(200);
+        }
+        if(digitalRead(yellowButton) == HIGH) {
+          maxLevel = max(maxLevel - 10, MIN_LEVEL);
+          lastInputTime = millis();
+          delay(200);
+        }
+        if(digitalRead(redButton) == HIGH) {
+          maxLevel = min(maxLevel + 1, MAX_SEQUENCE_LENGTH);
+          lastInputTime = millis();
+          delay(200);
+        }
+        if(digitalRead(greenButton) == HIGH) {
+          maxLevel = max(maxLevel - 1, MIN_LEVEL);
+          lastInputTime = millis();
+          delay(200);
+        }
+        // Anzeige aktualisieren
+        lcd.setCursor(11,0);
+        lcd.print("    "); // Lösche alte Zahl
+        lcd.setCursor(11,0);
+        lcd.print(maxLevel);
+        // Prüfe ob 5 Sekunden ohne Eingabe vergangen sind
+        if (millis() - lastInputTime > 5000) {
+          configuring = false;
+        }
+      }
+      // Bestätigung anzeigen
+      lcd.clear();
+      lcd.print("Laenge: ");
+      lcd.print(maxLevel);
+      delay(1000);
+   }
+
    //Spielstart gemäss dem gewählten Modus
    if (gameModeSelect > 0) {
       Serial.println("Starting Game...");
@@ -410,7 +446,7 @@ void loop() {
           lcd.print("   "); // Leerzeichen zum Löschen
           
           // Prüfen ob maximales Level erreicht wurde
-          if(aktuellesLevel >= MAX_LEVEL) {
+          if(aktuellesLevel >= maxLevel) {
             spielGewonnen();
             return;
           }
@@ -462,7 +498,7 @@ void loop() {
           lcd.print("   "); // Leerzeichen zum Löschen
           
           // Prüfen ob maximales Level erreicht wurde
-          if(aktuellesLevel >= MAX_LEVEL) {
+          if(aktuellesLevel >= maxLevel) {
             spielGewonnen();
             return;
           }
@@ -478,12 +514,5 @@ void loop() {
       digitalWrite(greenLED, LOW);
       digitalWrite(buzzerPin, LOW);
       gameModeSelect = 0; // Zurücksetzen der Moduswahl
-   }
-
-   // Start des gewählten Modus
-   if (gameModeSelect > 0) {
-      lcd.clear();
-      lcd.print("Starting...");
-      delay(1000);
    }
 }
