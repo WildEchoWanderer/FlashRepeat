@@ -4,8 +4,8 @@ Es ermöglicht die Auswahl von verschiedenen Spielmodi durch das gleichzeitige D
 Die Tasten sind wie folgt zugeordnet:
 - Blau & Rot: Normales Spiel
 - Gelb & Grün: Schwerer Modus
-- Blau & Gelb: N-Back Modus (2 Back)
-- Rot & Grün: N-Back Modus (3 Back)
+- Blau & Gelb: N-Back Modus (2 Back) (noch nicht implementiert)
+- Rot & Grün: N-Back Modus (3 Back) (noch nicht implementiert)
 
 */
 
